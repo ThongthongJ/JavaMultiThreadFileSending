@@ -16,70 +16,17 @@ public class Server {
         ServerSocket ss = new ServerSocket(PORT_NUMBER);
         printLog("Server created at localhost:" + PORT_NUMBER);
 
-        String socketAddress = null;
+        Socket s = null;
 
         while (isRunning) {
-            try (Socket s = ss.accept()) {
-                socketAddress = s.getInetAddress().toString();
-                PrintWriter out = new PrintWriter(s.getOutputStream(), true);
-                OutputStream os = s.getOutputStream();
-                InputStreamReader ir = new InputStreamReader(s.getInputStream());
-                BufferedReader in = new BufferedReader(ir);
+            try {
+                s = ss.accept();
+                Thread t = new ClientHandler(s, s.getInputStream(), s.getOutputStream());
+                t.start();
+            }
 
-                DataOutputStream dos = new DataOutputStream(s.getOutputStream());
-                printLog(socketAddress + " Connected");
-                out.println("Connected");
-
-                File file = new File(FILE_1);
-                InputStream fin = new FileInputStream(file);
-                OutputStream fout = s.getOutputStream();
-
-                String inputLine;
-
-                // Socket Input Loop
-                while ((inputLine = in.readLine()) != null) {
-                    
-                    // File Output
-                    if (inputLine.equals("1")) {
-                        dos.writeBoolean(true);
-                        byte[] bytes = new byte[BUFFER_SIZE];
-                        printLog("Sending File to " + s.getInetAddress());
-                        int count;
-                        while ((count = fin.read(bytes)) > 0) {
-                            fout.write(bytes, 0, count);
-                        }
-                        dos.writeBoolean(false);
-                    } else {
-                        dos.writeBoolean(false);
-                        if (inputLine.equals("x")) {
-                            s.close();
-                            break;
-                        }
-
-                        if (inputLine.equals("lul")) {
-                            System.out.println("LUL ME");
-                            out.println("lul back");
-                        } else {
-                            out.println("Enter input > ");
-                            printLog(s.getInetAddress() + " > " + inputLine);
-                            Thread.sleep(500);
-                        }
-
-                        
-                    }
-
-                }
-            } catch (IOException e) {
-                if (e.getMessage().equals("Connection reset")) {
-                    printLog(socketAddress + " Disconnected");
-                } else if (e.getMessage().equals("Socket closed")) {
-                    printLog("Socket Disconnected");
-                } else {
-                    printLog("Unhandled Exception > " + e.getMessage());
-                }
-
-            } catch (InterruptedException ie) {
-                ie.printStackTrace();
+            catch (Exception e) {
+                s.close();
             }
         }
 
@@ -94,4 +41,99 @@ public class Server {
         System.out.println("[" + dtf.format(now) + "]" + ": " + str);
 
     }
+}
+
+class ClientHandler extends Thread {
+
+    private Socket s;
+    private InputStream is;
+    private OutputStream os;
+    private String socketAddress;
+
+    private final String FILE_1 = "./box/test.txt";
+    private final int BUFFER_SIZE = 16 * 1024;
+
+    ClientHandler(Socket socket, InputStream is, OutputStream os) {
+        s = socket;
+        this.is = is;
+        this.os = os;
+    }
+
+    private static void printLog(Object message) {
+        DateTimeFormatter dtf = DateTimeFormatter.ofPattern("HH:mm:ss");
+        LocalDateTime now = LocalDateTime.now();
+
+        System.out.println("[" + dtf.format(now) + "]" + ": " + message);
+
+    }
+
+    public void run() {
+
+        try {
+            socketAddress = s.getInetAddress().toString();
+            PrintWriter out = new PrintWriter(os, true);
+            InputStreamReader ir = new InputStreamReader(is);
+            BufferedReader in = new BufferedReader(ir);
+            DataOutputStream dos = new DataOutputStream(os);
+
+            dos.writeBoolean(true);
+            printLog(socketAddress + " Connected");
+            out.println("Connected");
+
+            File file = new File(FILE_1);
+            InputStream fin = new FileInputStream(file);
+
+            String inputLine;
+
+            // Socket Input Loop
+            while ((inputLine = in.readLine()) != null) {
+
+                // File Output
+                if (inputLine.equals("1")) {
+                    dos.writeBoolean(false);
+                    byte[] bytes = new byte[BUFFER_SIZE];
+                    printLog("Sending File to " + s.getInetAddress());
+                    int count;
+                    while ((count = fin.read(bytes)) > 0) {
+                        os.write(bytes, 0, count);
+                    }
+                    dos.writeBoolean(true);
+                } else {
+                    dos.writeBoolean(true);
+                    if (inputLine.equals("x")) {
+                        s.close();
+                        break;
+                    }
+
+                    if (inputLine.equals("lul")) {
+                        System.out.println("LUL ME");
+                        out.println("lul back");
+                    } else {
+                        out.println("Enter input > ");
+                        printLog(s.getInetAddress() + " > " + inputLine);
+                        Thread.sleep(500);
+                    }
+
+                }
+
+            }
+
+            fin.close();
+        } catch (IOException e) {
+            if (e.getMessage().equals("Connection reset")) {
+                printLog(socketAddress + " Disconnected");
+            } else if (e.getMessage().equals("Socket closed")) {
+                printLog("Socket Disconnected");
+            } else {
+                printLog("Unhandled Exception > " + e.getMessage());
+            }
+
+        } catch (InterruptedException ie) {
+            ie.printStackTrace();
+        } catch (Exception e) {
+            System.out.println(e);
+        }
+
+    }
+
 }

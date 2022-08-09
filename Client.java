@@ -69,7 +69,7 @@ class ClientInput extends Thread {
                 boolean inType = dis.readBoolean();
                 System.out.println(inType);
 
-                if (inType) {
+                if (!inType) {
                     os = new FileOutputStream(FILE_OUTPUT);
                     while ((count = is.read(bytes)) > 0) {
                         os.write(bytes, 0, count);
@@ -84,42 +84,6 @@ class ClientInput extends Thread {
             e.printStackTrace();
         } catch (Exception e) {
             throw e;
-        }
-
-    }
-}
-
-class ClientFileInput extends Thread {
-
-    Socket s;
-    public static final String FILE_OUTPUT = "./box/output.txt";
-    public static final int BUFFER_SIZE = 16 * 1024;
-
-    public ClientFileInput(Socket socket) {
-        s = socket;
-    }
-
-    public void run() {
-        try {
-            OutputStream out = s.getOutputStream();
-            InputStream in = s.getInputStream();
-
-            byte[] bytes = new byte[BUFFER_SIZE];
-            out = new FileOutputStream(FILE_OUTPUT);
-
-            int count;
-
-            while ((count = in.read(bytes)) > 0) {
-                out.write(bytes, 0, count);
-            }
-            out.close();
-
-        } catch (IOException e) {
-            e.printStackTrace();
-        } catch (Exception e) {
-            throw e;
-        } finally {
-
         }
 
     }
