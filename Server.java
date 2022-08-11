@@ -8,6 +8,7 @@ public class Server {
 
     public static final int PORT_NUMBER = 8080;
     public static final String FILE_1 = "./box/test.txt";
+    public static final String FILE_2 = "./box/testP.pdf";
     public static final int BUFFER_SIZE = 16 * 1024;
 
     public static void main(String[] args) throws IOException {
@@ -50,7 +51,9 @@ class ClientHandler extends Thread {
     private OutputStream os;
     private String socketAddress;
 
-    private final String FILE_1 = "./box/test.txt";
+    private final String FILE_STORAGE = "./resources/";
+    private final String FILE_1 = "test.txt";
+    private final String FILE_2 = "testP.pdf";
     private final int BUFFER_SIZE = 16 * 1024;
 
     ClientHandler(Socket socket, InputStream is, OutputStream os) {
@@ -74,32 +77,29 @@ class ClientHandler extends Thread {
             PrintWriter out = new PrintWriter(os, true);
             InputStreamReader ir = new InputStreamReader(is);
             BufferedReader in = new BufferedReader(ir);
-            DataOutputStream dos = new DataOutputStream(os);
 
-            dos.writeBoolean(true);
             printLog(socketAddress + " Connected");
-            out.println("Connected");
-
-            File file = new File(FILE_1);
-            InputStream fin = new FileInputStream(file);
+            out.println("Connected to server");
 
             String inputLine;
 
-            // Socket Input Loop
+            // Socket I/O Loop
             while ((inputLine = in.readLine()) != null) {
 
-                // File Output
-                if (inputLine.equals("1")) {
-                    dos.writeBoolean(false);
+                
+                if (inputLine.equals("1")) { // File Sending
+                    File file = new File(FILE_STORAGE + FILE_2);
+                    InputStream fin = new FileInputStream(file);
+                    out.println("Sending File... <file_name>" + "Output" + FILE_2 + "</file_name>" + "<file_size>" + file.length() + "</file_size>");
                     byte[] bytes = new byte[BUFFER_SIZE];
                     printLog("Sending File to " + s.getInetAddress());
-                    int count;
+                    int count = 0;
                     while ((count = fin.read(bytes)) > 0) {
                         os.write(bytes, 0, count);
                     }
-                    dos.writeBoolean(true);
+                    fin.close();
+                    printLog("File sent to " + socketAddress);
                 } else {
-                    dos.writeBoolean(true);
                     if (inputLine.equals("x")) {
                         s.close();
                         break;
@@ -109,7 +109,6 @@ class ClientHandler extends Thread {
                         System.out.println("LUL ME");
                         out.println("lul back");
                     } else {
-                        out.println("Enter input > ");
                         printLog(s.getInetAddress() + " > " + inputLine);
                         Thread.sleep(500);
                     }
@@ -118,7 +117,6 @@ class ClientHandler extends Thread {
 
             }
 
-            fin.close();
         } catch (IOException e) {
             if (e.getMessage().equals("Connection reset")) {
                 printLog(socketAddress + " Disconnected");

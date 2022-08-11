@@ -1,6 +1,5 @@
 
 import java.io.BufferedReader;
-import java.io.DataInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -8,7 +7,6 @@ import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.PrintWriter;
 import java.net.Socket;
-import java.net.UnknownHostException;
 
 public class Client {
 
@@ -19,17 +17,12 @@ public class Client {
 
         try {
             Socket ss = new Socket(HOST_NAME, PORT_NUMBER);
-            ClientOutput out = new ClientOutput(ss);
-            out.start();
             ClientInput in = new ClientInput(ss);
             in.start();
-            // ClientFileInput fin = new ClientFileInput(ss);
-            // fin.start();
-        } catch (UnknownHostException e) {
-            System.err.println("Don't know about host " + HOST_NAME);
-            System.exit(1);
+            ClientOutput out = new ClientOutput(ss);
+            out.start();
         } catch (IOException e) {
-            System.err.println("Couldn't get I/O for the connection to " +
+            System.err.println("Couldn't connect to " +
                     HOST_NAME + ":" + PORT_NUMBER);
             System.exit(1);
         } catch (Exception e) {
@@ -43,9 +36,8 @@ public class Client {
 
 class ClientInput extends Thread {
 
-    Socket s;
-    public static final String FILE_OUTPUT = "./box/output.txt";
-    public static final int BUFFER_SIZE = 16 * 1024;
+    private Socket s;
+    private final int BUFFER_SIZE = 16 * 1024;
 
     public ClientInput(Socket socket) {
         s = socket;
@@ -60,20 +52,23 @@ class ClientInput extends Thread {
             InputStream is = s.getInputStream();
             byte[] bytes = new byte[BUFFER_SIZE];
 
-            DataInputStream dis = new DataInputStream(s.getInputStream());
-
-            int count;
-
             String outputFromServer;
             while ((outputFromServer = in.readLine()) != null) {
-                boolean inType = dis.readBoolean();
-                System.out.println(inType);
 
-                if (!inType) {
-                    os = new FileOutputStream(FILE_OUTPUT);
-                    while ((count = is.read(bytes)) > 0) {
+                if (outputFromServer.contains("Sending File...")) {
+                    int count = 0;
+                    String FILE_NAME = outputFromServer.substring(outputFromServer.indexOf("<file_name>") + "<file_name>".length(),
+                            outputFromServer.indexOf("</file_name>"));
+                    int FILE_SIZE = Integer.parseInt(outputFromServer.substring(outputFromServer.indexOf("<file_size>") + "<file_size>".length(),
+                    outputFromServer.indexOf("</file_size>")));
+
+                    os = new FileOutputStream(FILE_NAME);
+                    while (FILE_SIZE > 0) {
+                        count = is.read(bytes);
+                        FILE_SIZE -= count;
                         os.write(bytes, 0, count);
                     }
+                    System.out.println("File Recieved");
                 } else {
                     System.out.println(outputFromServer);
                     outputFromServer = null;
@@ -91,28 +86,41 @@ class ClientInput extends Thread {
 
 class ClientOutput extends Thread {
 
-    Socket s;
+    private Socket s;
+    private final int DELAY_TIME = 200;
 
     public ClientOutput(Socket socket) {
         this.s = socket;
     }
 
     public void run() {
+
         BufferedReader br = new BufferedReader(
                 new InputStreamReader(System.in));
         PrintWriter out;
         try {
+
             out = new PrintWriter(s.getOutputStream(), true);
             String userInput;
 
-            while ((userInput = br.readLine()) != null) {
+            while (true) {
+                Thread.sleep(DELAY_TIME);
+                System.out.print("Enter input : ");
+                userInput = br.readLine();
+
                 if (userInput.equals("x")) {
                     System.exit(0);
                 }
-                out.println(userInput);
+
+                if (userInput != null) {
+                    out.println(userInput);
+                }
+
             }
         } catch (IOException e) {
             e.printStackTrace();
+        } catch (InterruptedException ie) {
+            ie.printStackTrace();
         } catch (Exception e) {
             throw e;
         }
