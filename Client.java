@@ -41,17 +41,13 @@ class ClientInput extends Thread {
             InputStreamReader ir = new InputStreamReader(s.getInputStream());
             BufferedReader in = new BufferedReader(ir);
 
-            
-            InputStream is = s.getInputStream();
-            byte[] bytes = new byte[BUFFER_SIZE];
-
             String outputFromServer;
             while ((outputFromServer = in.readLine()) != null) {
 
                 if (outputFromServer.contains("Sending File...")) {
-                    OutputStream os = s.getOutputStream();
+
                     System.out.println("Receiving File...");
-                    int count = 0;
+
                     String FILE_NAME = outputFromServer.substring(
                             outputFromServer.indexOf("<file_name>") + "<file_name>".length(),
                             outputFromServer.indexOf("</file_name>"));
@@ -59,9 +55,13 @@ class ClientInput extends Thread {
                             outputFromServer.substring(outputFromServer.indexOf("<file_size>") + "<file_size>".length(),
                                     outputFromServer.indexOf("</file_size>")));
 
-                    os = new FileOutputStream(FILE_NAME);
+                    OutputStream os = new FileOutputStream(FILE_NAME);
+                    BufferedInputStream bis = new BufferedInputStream(s.getInputStream());
+                    byte[] bytes = new byte[BUFFER_SIZE];
+                    int count = 0;
+
                     while (FILE_SIZE > 0) {
-                        count = is.read(bytes);
+                        count = bis.read(bytes);
                         FILE_SIZE -= count;
                         os.write(bytes, 0, count);
                     }
@@ -93,13 +93,10 @@ class ClientOutput extends Thread {
     }
 
     public void run() {
-
-        BufferedReader br = new BufferedReader(
-                new InputStreamReader(System.in));
-        PrintWriter out;
         try {
-
-            out = new PrintWriter(s.getOutputStream(), true);
+            BufferedReader br = new BufferedReader(
+                    new InputStreamReader(System.in));
+            PrintWriter out = new PrintWriter(s.getOutputStream(), true);
             String userInput;
 
             while (true) {

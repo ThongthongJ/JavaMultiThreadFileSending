@@ -6,18 +6,15 @@ import java.io.*;
 public class Server {
 
     public static final int PORT_NUMBER = 8080;
-    public static final String FILE_1 = "./box/test.txt";
-    public static final String FILE_2 = "./box/testP.pdf";
-    public static final int BUFFER_SIZE = 16 * 1024;
 
     public static void main(String[] args) throws IOException {
-        boolean isRunning = true;
 
         ServerSocket ss = new ServerSocket(PORT_NUMBER);
         printLog("Server created at localhost:" + PORT_NUMBER);
 
         Socket s = null;
 
+        boolean isRunning = true;
         while (isRunning) {
             try {
                 s = ss.accept();
@@ -45,10 +42,10 @@ public class Server {
 
 class ClientHandler extends Thread {
 
+    private String socketAddress;
     private Socket s;
     private InputStream is;
     private OutputStream os;
-    private String socketAddress;
     private PrintWriter out;
     private BufferedReader in;
 
@@ -92,6 +89,18 @@ class ClientHandler extends Thread {
 
     }
 
+    private String getFileList() {
+        String str = "\n";
+
+        str += " === Select a file to download ===\n";
+        str += " [1] - " + FILE_1 + "\n";
+        str += " [2] - " + FILE_2 + "\n";
+        str += " [x] - Exit\n";
+        str += " =================================";
+
+        return str;
+    }
+
     public void run() {
 
         try {
@@ -102,6 +111,7 @@ class ClientHandler extends Thread {
 
             printLog(socketAddress + " Connected");
             out.println("Connected to server");
+            out.println(getFileList());
 
             String inputLine;
 
@@ -110,21 +120,22 @@ class ClientHandler extends Thread {
 
                 if (inputLine.equals("1")) {
                     sendFile(FILE_1);
+                    out.println(getFileList());
+
                 } else if (inputLine.equals("2")) {
                     sendFile(FILE_2);
+                    out.println(getFileList());
+
                 } else {
+                    out.println(getFileList());
+
                     if (inputLine.equals("x")) {
                         s.close();
                         break;
                     }
 
-                    if (inputLine.equals("lul")) {
-                        System.out.println("LUL ME");
-                        out.println("lul back");
-                    } else {
-                        printLog(s.getInetAddress() + " > " + inputLine);
-                        Thread.sleep(500);
-                    }
+                    printLog(s.getInetAddress() + " > " + inputLine);
+                    Thread.sleep(500);
 
                 }
 
