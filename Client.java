@@ -41,7 +41,7 @@ class ClientInput extends Thread {
             InputStreamReader ir = new InputStreamReader(s.getInputStream());
             BufferedReader in = new BufferedReader(ir);
 
-            OutputStream os = s.getOutputStream();
+            
             InputStream is = s.getInputStream();
             byte[] bytes = new byte[BUFFER_SIZE];
 
@@ -49,11 +49,15 @@ class ClientInput extends Thread {
             while ((outputFromServer = in.readLine()) != null) {
 
                 if (outputFromServer.contains("Sending File...")) {
+                    OutputStream os = s.getOutputStream();
+                    System.out.println("Receiving File...");
                     int count = 0;
-                    String FILE_NAME = outputFromServer.substring(outputFromServer.indexOf("<file_name>") + "<file_name>".length(),
+                    String FILE_NAME = outputFromServer.substring(
+                            outputFromServer.indexOf("<file_name>") + "<file_name>".length(),
                             outputFromServer.indexOf("</file_name>"));
-                    int FILE_SIZE = Integer.parseInt(outputFromServer.substring(outputFromServer.indexOf("<file_size>") + "<file_size>".length(),
-                    outputFromServer.indexOf("</file_size>")));
+                    int FILE_SIZE = Integer.parseInt(
+                            outputFromServer.substring(outputFromServer.indexOf("<file_size>") + "<file_size>".length(),
+                                    outputFromServer.indexOf("</file_size>")));
 
                     os = new FileOutputStream(FILE_NAME);
                     while (FILE_SIZE > 0) {
@@ -61,6 +65,7 @@ class ClientInput extends Thread {
                         FILE_SIZE -= count;
                         os.write(bytes, 0, count);
                     }
+                    os.close();
                     System.out.println("File Recieved");
                 } else {
                     System.out.println(outputFromServer);
@@ -69,7 +74,8 @@ class ClientInput extends Thread {
 
             }
         } catch (IOException e) {
-            e.printStackTrace();
+            System.out.println("\n !! Socket Error !! " + e.getMessage());
+            System.exit(1);
         } catch (Exception e) {
             throw e;
         }

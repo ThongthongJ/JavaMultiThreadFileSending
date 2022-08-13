@@ -1,4 +1,3 @@
-
 import java.net.*;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -50,6 +49,8 @@ class ClientHandler extends Thread {
     private InputStream is;
     private OutputStream os;
     private String socketAddress;
+    private PrintWriter out;
+    private BufferedReader in;
 
     private final String FILE_STORAGE = "./resources/";
     private final String FILE_1 = "test.txt";
@@ -70,13 +71,34 @@ class ClientHandler extends Thread {
 
     }
 
+    private boolean sendFile(String fileName) {
+        try {
+            File file = new File(FILE_STORAGE + fileName);
+            InputStream fin = new FileInputStream(file);
+            out.println("Sending File... <file_name>" + "Output" + fileName + "</file_name>" + "<file_size>"
+                    + file.length() + "</file_size>");
+            byte[] bytes = new byte[BUFFER_SIZE];
+            printLog("Sending " + fileName + " to " + s.getInetAddress());
+            int count = 0;
+            while ((count = fin.read(bytes)) > 0) {
+                os.write(bytes, 0, count);
+            }
+            fin.close();
+            printLog(fileName + " sent to " + socketAddress);
+            return true;
+        } catch (Exception e) {
+            return false;
+        }
+
+    }
+
     public void run() {
 
         try {
             socketAddress = s.getInetAddress().toString();
-            PrintWriter out = new PrintWriter(os, true);
+            out = new PrintWriter(os, true);
             InputStreamReader ir = new InputStreamReader(is);
-            BufferedReader in = new BufferedReader(ir);
+            in = new BufferedReader(ir);
 
             printLog(socketAddress + " Connected");
             out.println("Connected to server");
@@ -86,19 +108,10 @@ class ClientHandler extends Thread {
             // Socket I/O Loop
             while ((inputLine = in.readLine()) != null) {
 
-                
-                if (inputLine.equals("1")) { // File Sending
-                    File file = new File(FILE_STORAGE + FILE_2);
-                    InputStream fin = new FileInputStream(file);
-                    out.println("Sending File... <file_name>" + "Output" + FILE_2 + "</file_name>" + "<file_size>" + file.length() + "</file_size>");
-                    byte[] bytes = new byte[BUFFER_SIZE];
-                    printLog("Sending File to " + s.getInetAddress());
-                    int count = 0;
-                    while ((count = fin.read(bytes)) > 0) {
-                        os.write(bytes, 0, count);
-                    }
-                    fin.close();
-                    printLog("File sent to " + socketAddress);
+                if (inputLine.equals("1")) {
+                    sendFile(FILE_1);
+                } else if (inputLine.equals("2")) {
+                    sendFile(FILE_2);
                 } else {
                     if (inputLine.equals("x")) {
                         s.close();
