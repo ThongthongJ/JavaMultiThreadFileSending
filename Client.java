@@ -104,7 +104,7 @@ class ClientOutput extends Thread {
                 System.out.print("Enter input : ");
                 userInput = br.readLine();
 
-                if (userInput.equals("x")) {
+                if (userInput.equalsIgnoreCase("X")) {
                     System.exit(0);
                 }
 

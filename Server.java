@@ -93,9 +93,9 @@ class ClientHandler extends Thread {
         String str = "\n";
 
         str += " === Select a file to download ===\n";
-        str += " [1] - " + FILE_1 + "\n";
-        str += " [2] - " + FILE_2 + "\n";
-        str += " [x] - Exit\n";
+        str += "   [1] - " + FILE_1 + "\n";
+        str += "   [2] - " + FILE_2 + "\n";
+        str += "   [X] - Exit\n";
         str += " =================================";
 
         return str;
@@ -129,7 +129,7 @@ class ClientHandler extends Thread {
                 } else {
                     out.println(getFileList());
 
-                    if (inputLine.equals("x")) {
+                    if (inputLine.equalsIgnoreCase("X")) {
                         s.close();
                         break;
                     }
