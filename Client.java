@@ -30,7 +30,7 @@ public class Client {
 class ClientInput extends Thread {
 
     private Socket s;
-    private final int BUFFER_SIZE = 16 * 1024;
+    private final int BUFFER_SIZE = 16 * 4096;
 
     public ClientInput(Socket socket) {
         s = socket;
@@ -58,15 +58,16 @@ class ClientInput extends Thread {
                     OutputStream os = new FileOutputStream(FILE_NAME);
                     BufferedInputStream bis = new BufferedInputStream(s.getInputStream());
                     byte[] bytes = new byte[BUFFER_SIZE];
-                    int count = 0;
-
-                    while (FILE_SIZE > 0) {
-                        count = bis.read(bytes);
-                        FILE_SIZE -= count;
-                        os.write(bytes, 0, count);
+                    int count = FILE_SIZE;
+                    while (count > 0) {
+                        int recieved = bis.read(bytes);
+                        count -= recieved;
+                        // System.out.println(FILE_SIZE);
+                        os.write(bytes, 0, recieved);
                     }
                     os.close();
-                    System.out.println("File Recieved");
+                    System.out.println("File Recieved [" + FILE_SIZE + " bytes]");
+
                 } else {
                     System.out.println(outputFromServer);
                     outputFromServer = null;
