@@ -68,7 +68,7 @@ class ClientHandler extends Thread {
     private final String FILE_1 = "test.txt";
     private final String FILE_2 = "testP.pdf";
 
-    private final int BUFFER_NUMBER = 10;
+    private final int THREAD_NUMBER = 10;
 
     ClientHandler(Socket socket, InputStream is, OutputStream os) {
         s = socket;
@@ -111,14 +111,14 @@ class ClientHandler extends Thread {
             byte[] bytes = new byte[(int) file.length()];
 
             final int FILE_SIZE = (int) file.length();
-            final int BUFFER_SIZE = FILE_SIZE / BUFFER_NUMBER;
-            final int LEFT_OVER = FILE_SIZE % BUFFER_NUMBER;
+            final int SLICE_SIZE = FILE_SIZE / THREAD_NUMBER;
+            final int LEFT_OVER = FILE_SIZE % THREAD_NUMBER;
             fin.read(bytes, 0, FILE_SIZE);
 
-            for (int i = 0; i < BUFFER_NUMBER; i++) {
+            for (int i = 0; i < THREAD_NUMBER; i++) {
                 // System.out.println((i*BUFF) + " : " + ((i+1)*BUFF));
-                byte[] b = new byte[BUFFER_SIZE];
-                b = Arrays.copyOfRange(bytes, (i * BUFFER_SIZE), ((i + 1) * BUFFER_SIZE));
+                byte[] b = new byte[SLICE_SIZE];
+                b = Arrays.copyOfRange(bytes, (i * SLICE_SIZE), ((i + 1) * SLICE_SIZE));
                 ByteSender bs = new ByteSender(os, b);
                 bs.run();
             }
@@ -134,19 +134,20 @@ class ClientHandler extends Thread {
             Logger.printLog(fileName + " sent to " + socketAddress);
             return true;
         } catch (Exception e) {
-            Logger.printLog("\n !! Socket Error !! " + e.getMessage());
+            Logger.printLog("!! Socket Error !! " + e.getMessage());
             return false;
         }
     }
 
     private String getFileList() {
         String str = "\n";
+        
 
-        str += " === Select a file to download ===\n";
-        str += "   [1] - " + FILE_1 + "\n";
-        str += "   [2] - " + FILE_2 + "\n";
-        str += "   [X] - Exit\n";
-        str += " =================================";
+        str += " ┌── Select a file to download ──┒\n";
+        str += " │ [1] - " + FILE_1 + "\n";
+        str += " │ [2] - " + FILE_2 + "\n";
+        str += " │ [X] - Exit\n";
+        str += " └───────────────────────────────┚";
 
         return str;
     }
@@ -169,10 +170,8 @@ class ClientHandler extends Thread {
             while ((inputLine = in.readLine()) != null) {
 
                 if (inputLine.equals("1")) {
-                    // sendFile(FILE_1);
                     sendFile(FILE_1);
                     out.println(getFileList());
-
                 } else if (inputLine.equals("2")) {
                     sendFile(FILE_2);
                     out.println(getFileList());
@@ -211,12 +210,10 @@ class ClientHandler extends Thread {
 }
 
 class Logger {
-
     public static void printLog(Object message) {
         DateTimeFormatter dtf = DateTimeFormatter.ofPattern("HH:mm:ss");
         LocalDateTime now = LocalDateTime.now();
 
         System.out.println("[" + dtf.format(now) + "]" + ": " + message);
-
     }
 }
