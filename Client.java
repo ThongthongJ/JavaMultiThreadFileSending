@@ -7,7 +7,7 @@ public class Client {
     private static final String HOST_NAME = "localhost";
     private static final int PORT_NUMBER = 8080;
     private static final int BUFFER_SIZE = 16 * 4096;
-    private static final int THREAD_NUMBER = 10;
+    private static final int THREAD_NUMBER = 9;
 
     private static Socket s;
     private static String[] fileList;
@@ -36,19 +36,44 @@ public class Client {
 
         System.out.println("Receiving File...");
         FileOutputStream fos = new FileOutputStream(FILE_NAME);
-        BufferedInputStream bis = new BufferedInputStream(s.getInputStream());
-        byte[] bytes = new byte[(FILE_SIZE / THREAD_NUMBER)+1];
+        DataInputStream bis = new DataInputStream(s.getInputStream());
+        byte[] bytes = new byte[BUFFER_SIZE];
+        System.out.println("BYTE SIZE : " + bytes.length);
         int count = FILE_SIZE;
         while (count > 0) {
             int recieved = bis.read(bytes);
             count -= recieved;
-            System.out.println(new String(bytes));
             fos.write(bytes, 0, recieved);
         }
 
-        for (int i = 0; i < THREAD_NUMBER; i++) {
+        fos.close();
+        System.out.println("File Recieved [" + FILE_SIZE + " bytes]");
+    }
 
+    private static void receiveFileThread() throws Exception {
+        String FILE_NAME = in.readUTF();
+        int FILE_SIZE = in.readInt();
+        final int SLICE_SIZE = FILE_SIZE / THREAD_NUMBER;
+
+        System.out.println("Receiving File...");
+        FileOutputStream fos = new FileOutputStream(FILE_NAME);
+        DataInputStream bis = new DataInputStream(s.getInputStream());
+        byte[] bytes = new byte[SLICE_SIZE + 1];
+        System.out.println("BYTE SIZE : " + bytes.length);
+        int count = FILE_SIZE;
+        // while (count > 0) {
+        // int recieved = bis.read(bytes);
+        // count -= recieved;
+        // System.out.println("| " + new String(bytes) + " | " + recieved);
+        // fos.write(bytes, 0, recieved-1);
+        // }
+
+        for (int i = 0; i < THREAD_NUMBER; i++) {
+            int recieved = bis.read(bytes);
+            System.out.println("| " + new String(bytes) + " | " + recieved);
+            fos.write(bytes, 0, recieved - 1);
         }
+
         fos.close();
         System.out.println("File Recieved [" + FILE_SIZE + " bytes]");
     }

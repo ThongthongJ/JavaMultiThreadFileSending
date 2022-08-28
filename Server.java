@@ -33,8 +33,6 @@ public class Server {
     }
 }
 
-
-
 class ClientHandler extends Thread {
 
     private String socketAddress;
@@ -45,7 +43,7 @@ class ClientHandler extends Thread {
     private DataInputStream in;
 
     private final String FILE_STORAGE = "./resources/";
-    private final int THREAD_NUMBER = 10;
+    private final int THREAD_NUMBER = 9;
 
     File[] fileList;
 
@@ -59,22 +57,24 @@ class ClientHandler extends Thread {
     class ByteSender extends Thread {
 
         private byte[] b;
-    
-        ByteSender(byte[] b) {
+        private int i;
+
+        ByteSender(int i, byte[] b) {
+            this.i = i;
             this.b = b;
         }
-    
+
         @Override
         public void run() {
             try {
-                // System.out.println(new String(b));
-                System.out.println(b[b.length-1]);
+                // out.writeInt(i);
+                System.out.println(new String(b));
                 os.write(b);
             } catch (Exception e) {
                 Logger.printLog(e);
             }
         }
-    
+
     }
 
     private boolean sendFile(String fileName) {
@@ -94,7 +94,7 @@ class ClientHandler extends Thread {
             Logger.printLog(fileName + " sent to " + socketAddress);
             return true;
         } catch (Exception e) {
-            Logger.printLog("\n !! Socket Error !! " + e.getMessage());
+            Logger.printLog("!! Socket Error !! " + e.getMessage());
             return false;
         }
 
@@ -107,24 +107,26 @@ class ClientHandler extends Thread {
             out.writeUTF(fileName);
             out.writeInt((int) file.length());
             Logger.printLog("Sending " + fileName + " [" + file.length() + " bytes] to " + s.getInetAddress());
-            byte[] bytes = new byte[(int) file.length()];
+            byte[] fileBytes = new byte[(int) file.length()];
 
             final int FILE_SIZE = (int) file.length();
             final int SLICE_SIZE = FILE_SIZE / THREAD_NUMBER;
             final int LEFT_OVER = FILE_SIZE % THREAD_NUMBER;
-            fin.read(bytes, 0, FILE_SIZE);
+            fin.read(fileBytes, 0, FILE_SIZE);
 
             for (int i = 0; i < THREAD_NUMBER; i++) {
-                byte[] b = new byte[SLICE_SIZE+1];
-                b = Arrays.copyOfRange(bytes, (i * SLICE_SIZE), ((i + 1) * SLICE_SIZE));
-                b[b.length-1] = (byte) i;
-                new ByteSender(b).start();
+                byte[] b = new byte[SLICE_SIZE + 1];
+                b = Arrays.copyOfRange(fileBytes, (i * SLICE_SIZE), ((i + 1) * SLICE_SIZE));
+                b[b.length - 1] = Integer.toString(i).getBytes()[0];
+                // System.out.println(b[b.length-1]);
+                new ByteSender(i, b).start();
             }
             if (LEFT_OVER != 0) {
-                byte[] b = new byte[LEFT_OVER+1];
-                b = Arrays.copyOfRange(bytes, FILE_SIZE - LEFT_OVER, FILE_SIZE);
-                b[b.length-1] = (byte) (THREAD_NUMBER+1);
-                new ByteSender(b).start();
+                byte[] b = new byte[LEFT_OVER];
+                b = Arrays.copyOfRange(fileBytes, FILE_SIZE - LEFT_OVER, FILE_SIZE);
+                b[b.length - 1] = Integer.toString(THREAD_NUMBER).getBytes()[0];
+
+                new ByteSender(LEFT_OVER + 1, b).start();
             }
 
             fin.close();
@@ -152,7 +154,7 @@ class ClientHandler extends Thread {
             // Socket I/O Loop
             while ((index = in.readInt()) != -1) {
                 if (index <= fileList.length) {
-                    sendFileThread(fileList[index - 1].getName());
+                    sendFile(fileList[index - 1].getName());
                 } else {
                     Logger.printLog("Invalid file index");
                 }
@@ -175,7 +177,6 @@ class ClientHandler extends Thread {
 
     }
 
-    
     private String getFileList() {
 
         String str = "";
@@ -184,7 +185,6 @@ class ClientHandler extends Thread {
         }
         return str;
     }
-
 
 }
 
