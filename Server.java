@@ -33,27 +33,7 @@ public class Server {
     }
 }
 
-class ByteSender extends Thread {
 
-    private OutputStream os;
-    private byte[] b;
-
-    ByteSender(OutputStream os, byte[] b) {
-        this.os = os;
-        this.b = b;
-    }
-
-    @Override
-    public void run() {
-        try {
-            System.out.println(new String(b));
-            os.write(b);
-        } catch (Exception e) {
-            Logger.printLog(e);
-        }
-    }
-
-}
 
 class ClientHandler extends Thread {
 
@@ -76,11 +56,33 @@ class ClientHandler extends Thread {
         fileList = new File(FILE_STORAGE).listFiles();
     }
 
+    class ByteSender extends Thread {
+
+        private byte[] b;
+    
+        ByteSender(byte[] b) {
+            this.b = b;
+        }
+    
+        @Override
+        public void run() {
+            try {
+                // System.out.println(new String(b));
+                System.out.println(b[b.length-1]);
+                os.write(b);
+            } catch (Exception e) {
+                Logger.printLog(e);
+            }
+        }
+    
+    }
+
     private boolean sendFile(String fileName) {
         final int BUFFER_SIZE = 16 * 4096;
         try {
             File file = new File(FILE_STORAGE + fileName);
             InputStream fin = new FileInputStream(file);
+            out.writeUTF(fileName);
             out.writeInt((int) file.length());
             Logger.printLog("Sending " + fileName + " [" + file.length() + " bytes] to " + s.getInetAddress());
             byte[] bytes = new byte[BUFFER_SIZE];
@@ -101,7 +103,8 @@ class ClientHandler extends Thread {
     private boolean sendFileThread(String fileName) {
         try {
             File file = new File(FILE_STORAGE + fileName);
-            InputStream fin = new FileInputStream(file);
+            FileInputStream fin = new FileInputStream(file);
+            out.writeUTF(fileName);
             out.writeInt((int) file.length());
             Logger.printLog("Sending " + fileName + " [" + file.length() + " bytes] to " + s.getInetAddress());
             byte[] bytes = new byte[(int) file.length()];
@@ -112,14 +115,16 @@ class ClientHandler extends Thread {
             fin.read(bytes, 0, FILE_SIZE);
 
             for (int i = 0; i < THREAD_NUMBER; i++) {
-                byte[] b = new byte[SLICE_SIZE];
+                byte[] b = new byte[SLICE_SIZE+1];
                 b = Arrays.copyOfRange(bytes, (i * SLICE_SIZE), ((i + 1) * SLICE_SIZE));
-                new ByteSender(os, b).start();
+                b[b.length-1] = (byte) i;
+                new ByteSender(b).start();
             }
             if (LEFT_OVER != 0) {
-                byte[] b = new byte[LEFT_OVER];
+                byte[] b = new byte[LEFT_OVER+1];
                 b = Arrays.copyOfRange(bytes, FILE_SIZE - LEFT_OVER, FILE_SIZE);
-                new ByteSender(os, b).start();
+                b[b.length-1] = (byte) (THREAD_NUMBER+1);
+                new ByteSender(b).start();
             }
 
             fin.close();
@@ -129,16 +134,6 @@ class ClientHandler extends Thread {
             Logger.printLog("!! Socket Error !! " + e.getMessage());
             return false;
         }
-    }
-
-    private String getFileList() {
-
-        String str = "";
-        for (File file : fileList) {
-            str += file.getName() + "/";
-        }
-
-        return str;
     }
 
     public void run() {
@@ -157,7 +152,7 @@ class ClientHandler extends Thread {
             // Socket I/O Loop
             while ((index = in.readInt()) != -1) {
                 if (index <= fileList.length) {
-                    sendFile(fileList[index - 1].getName());
+                    sendFileThread(fileList[index - 1].getName());
                 } else {
                     Logger.printLog("Invalid file index");
                 }
@@ -179,6 +174,17 @@ class ClientHandler extends Thread {
         }
 
     }
+
+    
+    private String getFileList() {
+
+        String str = "";
+        for (File file : fileList) {
+            str += file.getName() + "/";
+        }
+        return str;
+    }
+
 
 }
 

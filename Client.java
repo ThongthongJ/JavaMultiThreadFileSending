@@ -7,21 +7,64 @@ public class Client {
     private static final String HOST_NAME = "localhost";
     private static final int PORT_NUMBER = 8080;
     private static final int BUFFER_SIZE = 16 * 4096;
+    private static final int THREAD_NUMBER = 10;
 
+    private static Socket s;
     private static String[] fileList;
+    private static DataOutputStream out;
+    private static DataInputStream in;
+
+    class ByteReader extends Thread {
+
+        private int i;
+
+        ByteReader(int i) {
+            this.i = i;
+        }
+
+        @Override
+        public void run() {
+            // TODO Auto-generated method stub
+            super.run();
+        }
+
+    }
+
+    private static void receiveFile() throws Exception {
+        String FILE_NAME = in.readUTF();
+        int FILE_SIZE = in.readInt();
+
+        System.out.println("Receiving File...");
+        FileOutputStream fos = new FileOutputStream(FILE_NAME);
+        BufferedInputStream bis = new BufferedInputStream(s.getInputStream());
+        byte[] bytes = new byte[(FILE_SIZE / THREAD_NUMBER)+1];
+        int count = FILE_SIZE;
+        while (count > 0) {
+            int recieved = bis.read(bytes);
+            count -= recieved;
+            System.out.println(new String(bytes));
+            fos.write(bytes, 0, recieved);
+        }
+
+        for (int i = 0; i < THREAD_NUMBER; i++) {
+
+        }
+        fos.close();
+        System.out.println("File Recieved [" + FILE_SIZE + " bytes]");
+    }
 
     public static void main(String[] args) {
 
         try {
-            Socket s = new Socket(HOST_NAME, PORT_NUMBER);
+            s = new Socket(HOST_NAME, PORT_NUMBER);
             Scanner scan = new Scanner(System.in);
-            DataInputStream in = new DataInputStream(s.getInputStream());
-            DataOutputStream out = new DataOutputStream(s.getOutputStream());
+            in = new DataInputStream(s.getInputStream());
+            out = new DataOutputStream(s.getOutputStream());
 
-            String str = in.readUTF();
-            System.out.println(str);
+            String status = in.readUTF();
+            System.out.println(status);
             String fileListStr = in.readUTF();
-            processFileList(fileListStr);
+            fileList = initFileList(fileListStr);
             while (true) {
                 printFileList();
                 System.out.print("Enter input : ");
@@ -32,21 +75,7 @@ public class Client {
                     break;
                 } else if (index <= fileList.length) {
                     out.writeInt(index);
-                    String FILE_NAME = fileList[index - 1];
-                    int FILE_SIZE = in.readInt();
-
-                    System.out.println("Receiving File...");
-                    FileOutputStream fos = new FileOutputStream(FILE_NAME);
-                    BufferedInputStream bis = new BufferedInputStream(s.getInputStream());
-                    byte[] bytes = new byte[BUFFER_SIZE];
-                    int count = FILE_SIZE;
-                    while (count > 0) {
-                        int recieved = bis.read(bytes);
-                        count -= recieved;
-                        fos.write(bytes, 0, recieved);
-                    }
-                    fos.close();
-                    System.out.println("File Recieved [" + FILE_SIZE + " bytes]");
+                    receiveFile();
                 } else {
                     System.out.println("!! Invalid File Number !!");
                 }
@@ -63,9 +92,8 @@ public class Client {
         }
     }
 
-    private static boolean processFileList(String fileListStr) {
-        fileList = fileListStr.split("/");
-        return true;
+    private static String[] initFileList(String fileListStr) {
+        return fileListStr.split("/");
     }
 
     private static void printFileList() {
