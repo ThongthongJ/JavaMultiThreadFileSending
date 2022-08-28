@@ -26,28 +26,30 @@ public class Client {
                 printFileList();
                 System.out.print("Enter input : ");
                 int index = scan.nextInt();
-                if (index > fileList.length) {
+                if (index == 0) {
+                    s.close();
+                    scan.close();
+                    break;
+                } else if (index <= fileList.length) {
+                    out.writeInt(index);
+                    String FILE_NAME = fileList[index - 1];
+                    int FILE_SIZE = in.readInt();
+
+                    System.out.println("Receiving File...");
+                    FileOutputStream fos = new FileOutputStream(FILE_NAME);
+                    BufferedInputStream bis = new BufferedInputStream(s.getInputStream());
+                    byte[] bytes = new byte[BUFFER_SIZE];
+                    int count = FILE_SIZE;
+                    while (count > 0) {
+                        int recieved = bis.read(bytes);
+                        count -= recieved;
+                        fos.write(bytes, 0, recieved);
+                    }
+                    fos.close();
+                    System.out.println("File Recieved [" + FILE_SIZE + " bytes]");
+                } else {
                     System.out.println("!! Invalid File Number !!");
-                    continue;
                 }
-
-                out.writeInt(index);
-
-                String FILE_NAME = fileList[index - 1];
-                int FILE_SIZE = in.readInt();
-
-                System.out.println("Receiving File...");
-                FileOutputStream fos = new FileOutputStream(FILE_NAME);
-                BufferedInputStream bis = new BufferedInputStream(s.getInputStream());
-                byte[] bytes = new byte[BUFFER_SIZE];
-                int count = FILE_SIZE;
-                while (count > 0) {
-                    int recieved = bis.read(bytes);
-                    count -= recieved;
-                    fos.write(bytes, 0, recieved);
-                }
-                fos.close();
-                System.out.println("File Recieved [" + FILE_SIZE + " bytes]");
 
             }
         } catch (IOException e) {
@@ -68,9 +70,12 @@ public class Client {
 
     private static void printFileList() {
         System.out.println();
+        System.out.println(" ┌── Select a file to download ──┒");
         for (int i = 0; i < fileList.length; i++) {
-            System.out.println(" [" + (i + 1) + "] - " + fileList[i]);
+            System.out.println(" │ [" + (i + 1) + "] - " + fileList[i]);
         }
+        System.out.println(" │ [0] - Exit");
+        System.out.println(" └───────────────────────────────┚");
     }
 
 }

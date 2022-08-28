@@ -157,14 +157,16 @@ class ClientHandler extends Thread {
             // Socket I/O Loop
             while ((index = in.readInt()) != -1) {
                 if (index <= fileList.length) {
-                    sendFile(fileList[index-1].getName());
+                    sendFile(fileList[index - 1].getName());
                 } else {
                     Logger.printLog("Invalid file index");
                 }
             }
 
         } catch (IOException e) {
-            if (e.getMessage().equals("Connection reset")) {
+            if (e.getMessage() == null) {
+                Logger.printLog(socketAddress + " Disconnected");
+            } else if (e.getMessage().equals("Connection reset")) {
                 Logger.printLog(socketAddress + " Disconnected");
             } else if (e.getMessage().equals("Socket closed")) {
                 Logger.printLog("Socket Disconnected");
@@ -172,8 +174,7 @@ class ClientHandler extends Thread {
                 Logger.printLog("Unhandled Exception > " + e.getMessage());
             }
 
-        }
-         catch (Exception e) {
+        } catch (Exception e) {
             Logger.printLog(e);
         }
 
