@@ -36,12 +36,12 @@ public class Client {
 
         System.out.println("Receiving File...");
         FileOutputStream fos = new FileOutputStream(FILE_NAME);
-        DataInputStream bis = new DataInputStream(s.getInputStream());
+        // DataInputStream bis = new DataInputStream(s.getInputStream());
         byte[] bytes = new byte[BUFFER_SIZE];
         System.out.println("BYTE SIZE : " + bytes.length);
         int count = FILE_SIZE;
         while (count > 0) {
-            int recieved = bis.read(bytes);
+            int recieved = in.read(bytes);
             count -= recieved;
             fos.write(bytes, 0, recieved);
         }
@@ -123,12 +123,11 @@ public class Client {
 
     private static void printFileList() {
         System.out.println();
-        System.out.println(" ┌── Select a file to download ──┒");
+        System.out.println(" --- Select a file to download ---");
         for (int i = 0; i < fileList.length; i++) {
-            System.out.println(" │ [" + (i + 1) + "] - " + fileList[i]);
+            System.out.println("  [" + (i + 1) + "] - " + fileList[i]);
         }
-        System.out.println(" │ [0] - Exit");
-        System.out.println(" └───────────────────────────────┚");
+        System.out.println("  [0] - Exit");
     }
 
 }

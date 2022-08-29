@@ -2,6 +2,7 @@ import java.net.*;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Arrays;
+import java.util.stream.StreamSupport;
 import java.io.*;
 
 public class Server {
@@ -88,7 +89,7 @@ class ClientHandler extends Thread {
             byte[] bytes = new byte[BUFFER_SIZE];
             int count = 0;
             while ((count = fin.read(bytes)) > 0) {
-                os.write(bytes, 0, count);
+                out.write(bytes, 0, count);
             }
             fin.close();
             Logger.printLog(fileName + " sent to " + socketAddress);
@@ -183,6 +184,7 @@ class ClientHandler extends Thread {
         for (File file : fileList) {
             str += file.getName() + "/";
         }
+        System.out.println(str);
         return str;
     }
 
