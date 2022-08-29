@@ -69,7 +69,7 @@ class ClientHandler extends Thread {
         public void run() {
             try {
                 // out.writeInt(i);
-                System.out.println(new String(b));
+                // System.out.println(new String(b));
                 os.write(b);
             } catch (Exception e) {
                 Logger.printLog(e);
@@ -116,18 +116,23 @@ class ClientHandler extends Thread {
             fin.read(fileBytes, 0, FILE_SIZE);
 
             for (int i = 0; i < THREAD_NUMBER; i++) {
-                byte[] b = new byte[SLICE_SIZE + 1];
+                byte[] b = new byte[SLICE_SIZE];
                 b = Arrays.copyOfRange(fileBytes, (i * SLICE_SIZE), ((i + 1) * SLICE_SIZE));
-                b[b.length - 1] = Integer.toString(i).getBytes()[0];
+                // b[b.length - 1] = Integer.toString(i).getBytes()[0];
                 // System.out.println(b[b.length-1]);
-                new ByteSender(i, b).start();
+                Thread bs = new ByteSender(i, b);
+                bs.start();
+                bs.sleep(10*(i+1));
             }
             if (LEFT_OVER != 0) {
                 byte[] b = new byte[LEFT_OVER];
                 b = Arrays.copyOfRange(fileBytes, FILE_SIZE - LEFT_OVER, FILE_SIZE);
-                b[b.length - 1] = Integer.toString(THREAD_NUMBER).getBytes()[0];
+                // b[b.length - 1] = Integer.toString(THREAD_NUMBER).getBytes()[0];
 
-                new ByteSender(LEFT_OVER + 1, b).start();
+                Thread bs = new ByteSender(LEFT_OVER + 1, b);
+                bs.start();
+                
+
             }
 
             fin.close();
@@ -155,7 +160,7 @@ class ClientHandler extends Thread {
             // Socket I/O Loop
             while ((index = in.readInt()) != -1) {
                 if (index <= fileList.length) {
-                    sendFile(fileList[index - 1].getName());
+                    sendFileThread(fileList[index - 1].getName());
                 } else {
                     Logger.printLog("Invalid file index");
                 }
